@@ -25,16 +25,16 @@ public class ItemController {
     @PostMapping
     public ResponseEntity<Item> createItem(@Valid @RequestBody Item item, BindingResult result) {
         if (result.hasErrors()) {
-            return new ResponseEntity<>(null, HttpStatus.CREATED);
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST); // Changed Created to Bad_Request
         }
-        return new ResponseEntity<>(itemService.save(item), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(itemService.save(item), HttpStatus.CREATED);// Changed Bad_Request->Created
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Item> getItemById(@PathVariable Long id) {
         return itemService.findById(id)
-                .map(item -> new ResponseEntity<>(item, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NO_CONTENT));
+                .map(item -> new ResponseEntity<>(item, HttpStatus.FOUND)) //Changed Ok -> Found
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND)); // Changed No_Content -> Not_Found
     }
 
     @PutMapping("/{id}")
@@ -42,16 +42,19 @@ public class ItemController {
         Optional<Item> existingItem = itemService.findById(id);
         if (existingItem.isPresent()) {
             item.setId(id);
-            return new ResponseEntity<>(itemService.save(item), HttpStatus.CREATED);
+            return new ResponseEntity<>(itemService.save(item), HttpStatus.ACCEPTED); //Changed Created->Accepted
         } else {
-            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Changed Accepted -> Not_Found
         }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
-        itemService.deleteById(id);
-        return new ResponseEntity<>(HttpStatus.CONFLICT);
+        if(itemService.findById(id).isPresent()) { //We need to check if the ID is present in the DataBase
+            itemService.deleteById(id); // Deleting the ID
+            return new ResponseEntity<>(HttpStatus.OK);// Sending HttpStatus OK
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND); // IF The ID isn't available we send Not Found
     }
 
     @GetMapping("/process")
