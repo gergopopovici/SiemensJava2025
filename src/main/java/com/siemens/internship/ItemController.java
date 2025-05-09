@@ -23,9 +23,13 @@ public class ItemController {
     }
 
     @PostMapping
-    public ResponseEntity<Item> createItem(@Valid @RequestBody Item item, BindingResult result) {
+    public ResponseEntity<Object> createItem(@Valid @RequestBody Item item, BindingResult result) {
         if (result.hasErrors()) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST); // Changed Created to Bad_Request
+            ErrorMessage errorMessage = new ErrorMessage();
+            errorMessage.setMessage("Validation Failed");
+            result.getFieldErrors().forEach(error -> errorMessage.
+                    getDetails().put(error.getField(), error.getDefaultMessage()));
+            return new ResponseEntity<>(errorMessage, HttpStatus.BAD_REQUEST); // Changed Created to Bad_Request
         }
         return new ResponseEntity<>(itemService.save(item), HttpStatus.CREATED);// Changed Bad_Request->Created
     }
@@ -50,7 +54,7 @@ public class ItemController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id) {
-        if(itemService.findById(id).isPresent()) { //We need to check if the ID is present in the DataBase
+        if (itemService.findById(id).isPresent()) { //We need to check if the ID is present in the DataBase
             itemService.deleteById(id); // Deleting the ID
             return new ResponseEntity<>(HttpStatus.OK);// Sending HttpStatus OK
         }
